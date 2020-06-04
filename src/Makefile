@@ -1,4 +1,3 @@
-
 OBJ1 = fon.o client.o 
 OBJ2 = fon.o serveur.o 
 OPTIONS	=
@@ -6,7 +5,7 @@ OPTIONS	=
 # Du fait de l'absence de libtermcap on se fait pas mal
 # cracher dessus mais ca marche...
 ifeq ($(shell uname), Darwin)
-LFLAGS	+= -L/opt/local/lib
+#LFLAGS	+= -L/opt/local/lib
 CFLAGS	+= -I /opt/local/include
 endif
 #Changer si necessaire le chemin d'acces aux librairies
@@ -29,18 +28,20 @@ OPTIONS	+= -ltermcap  -lsocket -lnsl
 CFLAGS	+= -I..
 endif
 
+INC_DIR=../include/
+CFLAGS += -Wall -I$(INC_DIR)
+
 EXEC = ${OBJ1} client ${OBJ2} serveur
 all: ${EXEC} 	
 
 
-fon.o :  fon.h fon.c
-	gcc -DDEBUG -c fon.c
-	#gcc -c fon.c
+fon.o :  $(INC_DIR)fon.h fon.c
+	gcc -DDEBUG $(CFLAGS) -c fon.c
 
-client.o : fon.h	client.c 
+client.o : $(INC_DIR)fon.h client.c 
 	gcc  $(CFLAGS) -c  client.c	
 
-serveur.o : fon.h	serveur.c 
+serveur.o : $(INC_DIR)fon.h	serveur.c 
 	gcc  $(CFLAGS) -c  serveur.c	
 
 client : ${OBJ1}	

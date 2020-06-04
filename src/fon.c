@@ -148,7 +148,7 @@ void h_bind ( int num_soc, struct sockaddr_in *p_adr_socket )
 {
 
 	int res;	/* Entier resultat de l'operation 	*/
-	struct sockaddr_in s,s1;
+	struct sockaddr_in s; //s1;
 	int lensa;
 	char str[INET_ADDRSTRLEN];
 
