@@ -15,4 +15,4 @@ Les commandes seront ici aux nombres de 3 :
 
 ### Cahier des charges
 
-Pour notre application :
+Nous utiliserons le protocole de transport TCP car nous souhaitons un transfert de données fiable, sans perte, quitte à ce qu'il soit un peu plus lent. 
