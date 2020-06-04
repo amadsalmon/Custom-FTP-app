@@ -16,3 +16,7 @@ Les commandes seront ici aux nombres de 3 :
 ### Cahier des charges
 
 Nous utiliserons le protocole de transport TCP car nous souhaitons un transfert de données fiable, sans perte, quitte à ce qu'il soit un peu plus lent. 
+
+Dans un premier temps, nous chercherons à rendre quelque chose de fonctionnel et donc nous irons au plus simple. C'est pour cette raison que proposerons dans un premier temps un server itératif.
+
+![Schéma du fonctionnement](https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_72/rzab6/rxab6505.gif)
