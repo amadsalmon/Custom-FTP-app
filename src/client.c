@@ -68,11 +68,10 @@ void client_appli (char *serveur,char *service)
 /* procedure correspondant au traitement du client de votre application */
 
 {
-  
-
-/* a completer .....  */
-
- }
+    int socket = h_socket();
+    int bind = h_bind(socket, sockaddr, p_address_socket);
+    h_connect(socket, sockaddr, );
+}
 
 /*****************************************************************************/
 
