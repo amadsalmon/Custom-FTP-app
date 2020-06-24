@@ -144,19 +144,18 @@ void build_file(int c_sock){
 
 	// A verifier : Conversion de char* vers long
 	memset(buffer, 0, SIZE);
-	h_reads(c_sock, buffer, 8);
-	u_long len_file = 0;
-
-	for(int i = 0; i < 8; i++){
-		len_file += buffer[i] << (8 - i);
-	}
+	char * sfile = malloc(8*sizeof(char));
+	h_reads(c_sock, sfile, 8);
+	u_long len_file = atol(sfile);
 
 	printf("LEN_FILE = %lu\n", len_file);
 	
+	// Nombre de bytes lu en tout
 	u_long bytes_read = 0;
-	
+	int read;
+
 	while(bytes_read < len_file){
-		int read = h_reads(c_sock, buffer, SIZE);
+		read = h_reads(c_sock, buffer, SIZE);
 		bytes_read += read;
 		
 		fwrite(buffer, 1, read, f);
@@ -168,19 +167,36 @@ void build_file(int c_sock){
 	return;
 }
 
+void send_file(int c_sock, char* fname, int len_name){
+	char* buffer = malloc(SIZE*sizeof(char));
+	FILE* f = fopen(fname, "r");
+
+	if (f == NULL){
+		printf("PANIC! File not found or cannot be opened\n");
+		return;
+	}
+
+	h_writes(c_sock, buffer, 8);
+
+
+	return;
+}
+
+
 /*****************************************************************************/
 void client_appli (char *serveur,char *service)
 
 /* procedure correspondant au traitement du client de votre application */
 
 {
+
 	int c_sock = h_socket(AF_INET, SOCK_STREAM);
 	/*h_bind(c_sock, NULL);*/
 
 	char* buffer; 
 	int command = -1;
 	char * fname;
-	int size_fname = 0;
+	int len_fname = 0;
 
 	while(1){
 		buffer = malloc(SIZE*sizeof(char));
@@ -193,18 +209,20 @@ void client_appli (char *serveur,char *service)
 			case 2: // get
 				h_writes(c_sock, "2", 1);
 				fname = get_fname(buffer);
-				size_fname = strlen(fname);
+				len_fname = strlen(fname);
 				char sfname[1]; 
-				sfname[0] = (char)size_fname; 
+				sfname[0] = (char)len_fname; 
 				/* Permet d'envoyer un entier precisant la longueur de la chaine, utile pour le décodage */
 				h_writes (c_sock, sfname, 1);
-				h_writes (c_sock, fname, size_fname);
+				h_writes (c_sock, fname, len_fname);
 				build_file(c_sock);
 				break;
 			case 3: // put 
 				/* Même chose que lorsque le serveur recoit un get (ie: découper le fichier et l'envoyer morceau par morceau) */
 				h_writes(c_sock, "3", 1);
-
+				fname = get_fname(buffer);
+				len_fname = strlen(fname);
+				send_file(c_sock, fname, len_name); 
 				break;
 			case 4: // close
 				h_close(c_sock);
