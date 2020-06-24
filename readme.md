@@ -22,3 +22,12 @@ Dans un premier temps, nous chercherons à rendre quelque chose de fonctionnel e
 ![Schéma du fonctionnement](https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_72/rzab6/rxab6505.gif)
 
 Par la suite (et très rapidement) nous utiliserons un serveur parallèle. (Disponible pour la version finale)
+
+__La transimission des fichiers :__
+
+Plusieurs points sont à traités ici, quel est le nom du fichier ? quelle est sa taille ? quel est son extension ?
+
+Voici une solution possible (probablement pas optimale mais qui a le mérite de fonctionner) :
+	1 - Le premier segment à partir contiendra le flag PSH (pas de bufferisation).
+	    Il aura pour but d'indiquer la taille du nom du fichier avec son extension (1er octet)
+	2 - Puis par la suite toutes les données du fichier.	     
