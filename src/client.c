@@ -94,6 +94,9 @@ int get_command(char* s){
 		return 2;
 	else if (strcmp("get", s) == 0)
 		return 3;
+	else if (strcmp("close", s) == 0){
+		return 4;
+	}
 	
 	return -1;
 }
@@ -119,6 +122,50 @@ char* get_fname(char* s){
 	res[j] = '\0';
 
 	return res;
+}
+
+void build_file(int c_sock){
+	char* buffer = malloc(SIZE*sizeof(char));
+
+	h_reads(c_sock, buffer, 1);
+	int len_name = buffer[0];
+
+	h_reads(c_sock, buffer, len_name);
+	char* name_file = malloc(len_name * sizeof(char));
+	for(int i = 0; i < len_name; i++)
+		name_file[i] = buffer[i+1];
+
+	FILE* f = fopen(name_file, "w");
+
+	if(f == NULL){
+		printf("PANIC! Couldn't create a new file");
+		return;
+	}
+
+	// A verifier : Conversion de char* vers long
+	memset(buffer, 0, SIZE);
+	h_reads(c_sock, buffer, 8);
+	u_long len_file = 0;
+
+	for(int i = 0; i < 8; i++){
+		len_file += buffer[i] << (8 - i);
+	}
+
+	printf("LEN_FILE = %lu\n", len_file);
+	
+	u_long bytes_read = 0;
+	
+	while(bytes_read < len_file){
+		int read = h_reads(c_sock, buffer, SIZE);
+		bytes_read += read;
+		
+		fwrite(buffer, 1, read, f);
+	}
+
+	fclose(f);
+	free(buffer);
+
+	return;
 }
 
 /*****************************************************************************/
@@ -147,13 +194,21 @@ void client_appli (char *serveur,char *service)
 				h_writes(c_sock, "2", 1);
 				fname = get_fname(buffer);
 				size_fname = strlen(fname);
+				char sfname[1]; 
+				sfname[0] = (char)size_fname; 
 				/* Permet d'envoyer un entier precisant la longueur de la chaine, utile pour le décodage */
-				h_writes (c_sock, size_fname, 1);
+				h_writes (c_sock, sfname, 1);
 				h_writes (c_sock, fname, size_fname);
-			case 3:
+				build_file(c_sock);
+				break;
+			case 3: // put 
 				/* Même chose que lorsque le serveur recoit un get (ie: découper le fichier et l'envoyer morceau par morceau) */
 				h_writes(c_sock, "3", 1);
 
+				break;
+			case 4: // close
+				h_close(c_sock);
+				break;
 			default:
 				printf("PANIC! - Unkwonw command\n");
 		}
