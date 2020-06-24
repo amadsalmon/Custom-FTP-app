@@ -29,6 +29,11 @@
 
 #define PUBLIC_FOLDER_PATH "../public"
 
+#define PARSED_GET 1
+#define PARSED_PUT 2
+#define PARSED_LS 3
+
+
 void serveur_appli (char *service);   /* programme serveur */
 
 
