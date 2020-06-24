@@ -83,8 +83,24 @@ void serveur_appli(char *service)
 
 /******************************************************************************/	
 
+int get_file(char* filename, int num_soc, char *buffer, int nb_octets_buffer)
+{
 
+	int nb_octets_ecrits = 0;
 
+	if ((FILE*f=fopen(filename,"r"))==NULL)
+	{
+		return 0;
+	}
+
+  	while(fgets(buffer,100,f))
+    {
+		nb_octets_ecrits += h_writes(num_soc, buffer, nb_octets_buffer);
+	}
+	// write() un délimiteur de fin ?
+	
+	// La fermeture de la connexion avec le client se fait en dehors de cette fonction 
+	return nb_octets_ecrits;
 }
 
 
