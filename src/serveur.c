@@ -85,10 +85,43 @@ void serveur_appli(char *service)
 		h_reads(socket, buffer, taille_buffer);
 		
 		// Lire ici dans le buffer.
+		// Parser la commande lue.
+		int parsed_command = parse_buffer(buffer, BUFFER_SIZE);
+
+		// Réagir en fonction de la commande lue.
+		switch (parsed_command)
+		{
+		case PARSED_GET:
+			/* code */
+			break;
+		case PARSED_PUT:
+			/* code */
+			break;
+		case PARSED_LS:
+			/* code */
+			break;
+		
+		default:
+			h_writes(socket, "Erreur : commande non valide.", strlen("Erreur : commande non valide."));
+			h_close(socket);
+			break;
+		}
 	}
 }
 
 /******************************************************************************/	
+
+/**
+ * Lit le contenu du buffer et retourne la commande lue.
+ * @return 1 si la commande est un get
+ * @return 2 si la commande est un put
+ * @return 3 si la commande est un ls
+ * @return -1 sinon
+ * */
+int parse_buffer(char *tampon, int taille_buffer){
+	return -#
+}
+
 
 int get_file(char* filename, int num_soc, char *buffer, int nb_octets_buffer)
 {
@@ -100,7 +133,7 @@ int get_file(char* filename, int num_soc, char *buffer, int nb_octets_buffer)
 		return 0;
 	}
 
-  	while(fgets(buffer,100,f))
+  	while(fgets(buffer,nb_octets_buffer,f))
     {
 		nb_octets_ecrits += h_writes(num_soc, buffer, nb_octets_buffer);
 	}
