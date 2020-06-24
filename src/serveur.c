@@ -62,10 +62,29 @@ void serveur_appli(char *service)
 /* Procedure correspondant au traitemnt du serveur de votre application */
 
 {
+	char buffer[BUFFER_SIZE];
 
-/* A completer ... */
+	int socket = h_socket();
+	struct sockaddr_in *p_address_socket = malloc(sizeof(sockaddr_in));
+	adr_socket(service, IP_DEFAUT, typesock, p_address_socket); // Initialisation de la socket
 
+	int bind = h_bind(socket, p_address_socket);
+
+	int nb_req_att = 1; // Nombre de requêtes à écouter
+	h_listen(socket, nb_req_att);
+	for (int i = 0; i < nb_req_att; i++)
+	{
+		h_accept(socket, /* on doit mettre ici le struct sockaddr_in* du client mais comment l'obtenir ??? */);
+		h_reads(socket, buffer, taille_buffer);
+		
+		// Lire ici dans le buffer.
+	}
 }
 
 /******************************************************************************/	
+
+
+
+}
+
 
