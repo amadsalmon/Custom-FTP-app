@@ -36,13 +36,13 @@ all: ${EXEC}
 
 
 fon.o :  $(INC_DIR)fon.h fon.c
-	gcc -DDEBUG $(CFLAGS) -c fon.c
+	gcc -g -DDEBUG $(CFLAGS) -c fon.c
 
 client.o : $(INC_DIR)fon.h client.c 
-	gcc  $(CFLAGS) -c  client.c	
+	gcc -g  $(CFLAGS) -c  client.c	
 
 serveur.o : $(INC_DIR)fon.h	serveur.c 
-	gcc  $(CFLAGS) -c  serveur.c	
+	gcc -g $(CFLAGS) -c  serveur.c	
 
 client : ${OBJ1}	
 	gcc $(LFLAGS) ${OBJ1} -o client -lcurses   $(OPTIONS)
