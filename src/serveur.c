@@ -17,10 +17,17 @@
 #include<sys/signal.h>
 #include<sys/wait.h>
 #include<stdlib.h>
+#include <sys/socket.h>
 
 #include "fon.h"     		/* Primitives de la boite a outils */
 
+#include <dirent.h>
+
 #define SERVICE_DEFAUT "1111"
+
+#define BUFFER_SIZE 65536
+
+#define PUBLIC_FOLDER_PATH "../public"
 
 void serveur_appli (char *service);   /* programme serveur */
 
@@ -103,4 +110,29 @@ int get_file(char* filename, int num_soc, char *buffer, int nb_octets_buffer)
 	return nb_octets_ecrits;
 }
 
+/**
+ * Fonction appelée par le serveur lorsque celui-ci recevra de la part du client une commande "ls". Liste alors tous les fichiers contenus dans le répertoire courant.
+ * */
+int ls_dir(int num_soc, char *buffer, int nb_octets_buffer)
+{
+	int nb_octets_ecrits = 0;
+
+	struct dirent *dir;  // Pointer for directory entry 
+	DIR *d = opendir(PUBLIC_FOLDER_PATH);
+
+	if (d == NULL)
+	{
+		printf("Could not open current directory." ); 
+		return 0;
+	}
+
+	while ((dir = readdir(d)) != NULL) {
+		printf("%s\n", dir->d_name);
+		// Besoin de mettre dir->d_name dans le buffer!
+		nb_octets_ecrits += h_writes(num_soc, buffer, nb_octets_buffer);
+	}
+	closedir(d);
+
+	return nb_octets_ecrits;
+}
 
