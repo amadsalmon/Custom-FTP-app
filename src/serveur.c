@@ -25,13 +25,12 @@
 
 #define SERVICE_DEFAUT "1111"
 
-#define BUFFER_SIZE 65536
-
 #define PUBLIC_FOLDER_PATH "../public"
 
-#define PARSED_GET 1
-#define PARSED_PUT 2
-#define PARSED_LS 3
+
+#define SIZE 1480
+#define DELIMITORS "\n\r\t\f\v" /* Les delimiteurs usuelles */
+
 
 
 void serveur_appli (char *service);   /* programme serveur */
@@ -74,7 +73,7 @@ void serveur_appli(char *service)
 /* Procedure correspondant au traitemnt du serveur de votre application */
 
 {
-	char buffer[BUFFER_SIZE];
+	char buffer[SIZE];
 
 	int socket = h_socket();
 	struct sockaddr_in *p_address_socket = malloc(sizeof(sockaddr_in));
@@ -113,40 +112,51 @@ void serveur_appli(char *service)
 		}
 	}
 }
-
-/******************************************************************************/	
-
-/**
- * Lit le contenu du buffer et retourne la commande lue.
- * @return 1 si la commande est un get
- * @return 2 si la commande est un put
- * @return 3 si la commande est un ls
- * @return -1 sinon
- * */
-int parse_buffer(char *tampon, int taille_buffer){
-	return -#
-}
-
-
-int get_file(char* filename, int num_soc, char *buffer, int nb_octets_buffer)
-{
-
-	int nb_octets_ecrits = 0;
-
-	if ((FILE*f=fopen(filename,"r"))==NULL)
-	{
-		return 0;
-	}
-
-  	while(fgets(buffer,nb_octets_buffer,f))
-    {
-		nb_octets_ecrits += h_writes(num_soc, buffer, nb_octets_buffer);
-	}
-	// write() un délimiteur de fin ?
 	
-	// La fermeture de la connexion avec le client se fait en dehors de cette fonction 
-	return nb_octets_ecrits;
+void build_file(int c_sock){
+	char* buffer = malloc(SIZE*sizeof(char));
+
+	h_reads(c_sock, buffer, 1);
+	int len_name = buffer[0];
+
+	h_reads(c_sock, buffer, len_name);
+	char* name_file = malloc(len_name * sizeof(char));
+	for(int i = 0; i < len_name; i++)
+		name_file[i] = buffer[i+1];
+
+	FILE* f = fopen(name_file, "w");
+
+	if(f == NULL){
+		printf("PANIC! Couldn't create a new file");
+		return;
+	}
+
+	// A verifier : Conversion de char* vers long
+	memset(buffer, 0, SIZE);
+	char * sfile = malloc(8*sizeof(char));
+	h_reads(c_sock, sfile, 8);
+	u_long len_file = atol(sfile);
+
+	printf("LEN_FILE = %lu\n", len_file);
+	
+	// Nombre de bytes lu en tout
+	u_long bytes_read = 0;
+	int read;
+
+	while(bytes_read < len_file){
+		read = h_reads(c_sock, buffer, SIZE);
+		bytes_read += read;
+		
+		fwrite(buffer, 1, read, f);
+		memset(buffer, 0, SIZE);
+	}
+
+	fclose(f);
+	free(buffer);
+
+	return;
 }
+
 
 /**
  * Fonction appelée par le serveur lorsque celui-ci recevra de la part du client une commande "ls". Liste alors tous les fichiers contenus dans le répertoire courant.
