@@ -228,9 +228,10 @@ void client_appli (char *serveur,char *service)
 /* procedure correspondant au traitement du client de votre application */
 
 {
-
+	struct sockaddr_in *clientAddress;
 	int c_sock = h_socket(AF_INET, SOCK_STREAM);
-	/*h_bind(c_sock, NULL);*/
+	adr_socket(SERVICE_DEFAUT, SERVEUR_DEFAUT, AF_INET, &clientAddress);
+	h_bind(c_sock, clientAddress);
 
 	char* buffer; 
 	int command = -1;

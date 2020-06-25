@@ -18,12 +18,14 @@
 #include<sys/wait.h>
 #include<stdlib.h>
 #include <sys/socket.h>
+#include <string.h>
 
 #include "fon.h"     		/* Primitives de la boite a outils */
 
 #include <dirent.h>
 
-#define SERVICE_DEFAUT "1111"
+#define SERVICE_DEFAUT "2222"
+#define SERVEUR_DEFAUT "127.0.0.1"
 
 #define PUBLIC_FOLDER_PATH "../public"
 
@@ -73,44 +75,13 @@ void serveur_appli(char *service)
 /* Procedure correspondant au traitemnt du serveur de votre application */
 
 {
-	char buffer[SIZE];
+	char* buffer = malloc(SIZE*sizeof(char));
 
-	int socket = h_socket();
-	struct sockaddr_in *p_address_socket = malloc(sizeof(sockaddr_in));
-	adr_socket(service, IP_DEFAUT, typesock, p_address_socket); // Initialisation de la socket
+	struct sockaddr_in *serverAddress;
+	int s_sock = h_socket(AF_INET, SOCK_STREAM);
+	adr_socket(SERVICE_DEFAUT, SERVEUR_DEFAUT, AF_INET, &serverAddress);
+	h_bind(s_sock, serverAddress);
 
-	int bind = h_bind(socket, p_address_socket);
-
-	int nb_req_att = 1; // Nombre de requêtes à écouter
-	h_listen(socket, nb_req_att);
-	for (int i = 0; i < nb_req_att; i++)
-	{
-		h_accept(socket, /* on doit mettre ici le struct sockaddr_in* du client mais comment l'obtenir ??? */);
-		h_reads(socket, buffer, taille_buffer);
-		
-		// Lire ici dans le buffer.
-		// Parser la commande lue.
-		int parsed_command = parse_buffer(buffer, BUFFER_SIZE);
-
-		// Réagir en fonction de la commande lue.
-		switch (parsed_command)
-		{
-		case PARSED_GET:
-			/* code */
-			break;
-		case PARSED_PUT:
-			/* code */
-			break;
-		case PARSED_LS:
-			/* code */
-			break;
-		
-		default:
-			h_writes(socket, "Erreur : commande non valide.", strlen("Erreur : commande non valide."));
-			h_close(socket);
-			break;
-		}
-	}
 }
 	
 void build_file(int c_sock){
