@@ -30,4 +30,12 @@ Plusieurs points sont à traités ici, quel est le nom du fichier ? quelle est s
 Voici une solution possible (probablement pas optimale mais qui a le mérite de fonctionner) :
 	1 - Le premier segment à partir contiendra le flag PSH (pas de bufferisation).
 	    Il aura pour but d'indiquer la taille du nom du fichier avec son extension (1er octet)
-	2 - Puis par la suite toutes les données du fichier.	     
+	2 - Puis par la suite toutes les données du fichier.
+
+En somme, la solution proposé est semblable à ce que nous avons pu faire durant POO : nous indiquons la taille chacun de nos éléments fournis ainsi que de leur nom puis on parse les n char indiqués.
+
+La version itératif sert en premier lieu à debug, les threads rendent la chose impossible à faire. 
+
+__Version concurrente :__
+
+
