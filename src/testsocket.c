@@ -12,16 +12,16 @@ int main(int argc, char const *argv[])
 {
     /*  Définition du serveur  */
     char serveur_IP[] = "127.0.0.1";
-    char serveur_port[] = "23580";
+    char serveur_port[] = "23670";
     struct sockaddr_in *p_adr_socket_s;
-    adr_socket(serveur_port, serveur_IP, SOCK_DGRAM, &p_adr_socket_s);
+    adr_socket(serveur_port, serveur_IP, SOCK_STREAM, &p_adr_socket_s);
 
     /*  Définition du client  */
     char client_IP[] = "127.0.0.1";
     char client_port[] = "28000";
-    int client_socket = h_socket(AF_INET,SOCK_DGRAM);
+    int client_socket = h_socket(AF_INET,SOCK_STREAM);
     struct sockaddr_in *p_adr_socket_c;
-    adr_socket(client_port, client_IP, SOCK_DGRAM, &p_adr_socket_c);
+    adr_socket(client_port, client_IP, SOCK_STREAM, &p_adr_socket_c);
     h_bind(client_socket, p_adr_socket_c);
 
 
@@ -30,8 +30,9 @@ int main(int argc, char const *argv[])
     // 1 char ASCII = 1 octet donc "Bonjour\O"=8 octets
     char buffer[] = "Bonjour";
 
-    /*  Envoi  */
-    h_sendto(client_socket, buffer, taille_buffer, p_adr_socket_s);
+    h_connect(client_socket, p_adr_socket_s);
+    
+    h_writes(client_socket, buffer, taille_buffer);
 
     return 0;
 }
