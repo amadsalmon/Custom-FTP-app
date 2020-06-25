@@ -10,8 +10,8 @@
 /*									      									  */
 /******************************************************************************/	
 
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <curses.h> 		/* Primitives de gestion d'ecran */
 #include <sys/signal.h>
 #include <sys/wait.h>
@@ -24,7 +24,7 @@
 #define SERVICE_DEFAUT "1111"
 #define SERVEUR_DEFAUT "127.0.0.1"
 
-#define SIZE 1500
+#define SIZE 1480
 #define DELIMITORS "\n\r\t\f\v" /* Les delimiteurs usuelles */
 
 void client_appli (char *serveur, char *service);
@@ -144,22 +144,22 @@ void build_file(int c_sock){
 
 	// A verifier : Conversion de char* vers long
 	memset(buffer, 0, SIZE);
-	h_reads(c_sock, buffer, 8);
-	u_long len_file = 0;
-
-	for(int i = 0; i < 8; i++){
-		len_file += buffer[i] << (8 - i);
-	}
+	char * sfile = malloc(8*sizeof(char));
+	h_reads(c_sock, sfile, 8);
+	u_long len_file = atol(sfile);
 
 	printf("LEN_FILE = %lu\n", len_file);
 	
+	// Nombre de bytes lu en tout
 	u_long bytes_read = 0;
-	
+	int read;
+
 	while(bytes_read < len_file){
-		int read = h_reads(c_sock, buffer, SIZE);
+		read = h_reads(c_sock, buffer, SIZE);
 		bytes_read += read;
 		
 		fwrite(buffer, 1, read, f);
+		memset(buffer, 0, SIZE);
 	}
 
 	fclose(f);
@@ -168,19 +168,74 @@ void build_file(int c_sock){
 	return;
 }
 
+void send_file(int c_sock, char* fname, int len_name){
+	char* buffer = malloc(SIZE*sizeof(char));
+	FILE* f = fopen(fname, "r");
+
+	if (f == NULL){
+		printf("PANIC! File not found or cannot be opened\n");
+		return;
+	}
+
+	/* Permet de connaître la taille du fichier */
+	fseek(f, 0L, SEEK_END);
+	long idx_end = ftell(f);
+	fseek(f, 0L, SEEK_SET);
+
+	char* fsize = malloc(20*sizeof(char)); // 2^64 en base 10 fait au plus 20 digits de long
+
+	int l_fsize = sprintf(fsize, "%lu", idx_end); //moyen tordu de convertir un long en chaîne de charactères
+
+	h_writes(c_sock, fsize, l_fsize);
+
+	long bytes_sent = 0;
+	long sent = 0;
+
+	while(bytes_sent < idx_end){
+		fgets(buffer, SIZE, f);
+
+		sent = h_writes(c_sock, buffer, SIZE);
+
+		if (sent != SIZE && bytes_sent + sent != idx_end) {
+			for(int i = sent; i < SIZE; i++){
+				buffer[i - sent] = buffer[i];
+			}
+		}
+
+		bytes_sent += sent;
+
+		int left = SIZE - sent;
+
+		while (left){
+			sent = h_writes(c_sock, buffer, left);
+			bytes_sent += sent;
+			for(int i = sent ; i < left; i++)
+				buffer[i - sent] = buffer[i];
+			left -= sent;
+		}
+
+	}
+
+	free(buffer);
+	fclose(f);
+	return;
+}
+
+
 /*****************************************************************************/
 void client_appli (char *serveur,char *service)
 
 /* procedure correspondant au traitement du client de votre application */
 
 {
+
 	int c_sock = h_socket(AF_INET, SOCK_STREAM);
 	/*h_bind(c_sock, NULL);*/
 
 	char* buffer; 
 	int command = -1;
 	char * fname;
-	int size_fname = 0;
+	int len_fname = 0;
 
 	while(1){
 		buffer = malloc(SIZE*sizeof(char));
@@ -193,18 +248,20 @@ void client_appli (char *serveur,char *service)
 			case 2: // get
 				h_writes(c_sock, "2", 1);
 				fname = get_fname(buffer);
-				size_fname = strlen(fname);
+				len_fname = strlen(fname);
 				char sfname[1]; 
-				sfname[0] = (char)size_fname; 
+				sfname[0] = (char)len_fname; 
 				/* Permet d'envoyer un entier precisant la longueur de la chaine, utile pour le décodage */
 				h_writes (c_sock, sfname, 1);
-				h_writes (c_sock, fname, size_fname);
+				h_writes (c_sock, fname, len_fname);
 				build_file(c_sock);
 				break;
 			case 3: // put 
 				/* Même chose que lorsque le serveur recoit un get (ie: découper le fichier et l'envoyer morceau par morceau) */
 				h_writes(c_sock, "3", 1);
-
+				fname = get_fname(buffer);
+				len_fname = strlen(fname);
+				send_file(c_sock, fname, len_fname); 
 				break;
 			case 4: // close
 				h_close(c_sock);
