@@ -10,8 +10,8 @@
 /*									      									  */
 /******************************************************************************/	
 
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <curses.h> 		/* Primitives de gestion d'ecran */
 #include <sys/signal.h>
 #include <sys/wait.h>
@@ -24,7 +24,7 @@
 #define SERVICE_DEFAUT "1111"
 #define SERVEUR_DEFAUT "127.0.0.1"
 
-#define SIZE 1500
+#define SIZE 1480
 #define DELIMITORS "\n\r\t\f\v" /* Les delimiteurs usuelles */
 
 void client_appli (char *serveur, char *service);
@@ -159,6 +159,7 @@ void build_file(int c_sock){
 		bytes_read += read;
 		
 		fwrite(buffer, 1, read, f);
+		memset(buffer, 0, SIZE);
 	}
 
 	fclose(f);
@@ -176,10 +177,47 @@ void send_file(int c_sock, char* fname, int len_name){
 		return;
 	}
 
-	
-	h_writes(c_sock, buffer, 8);
+	/* Permet de connaître la taille du fichier */
+	fseek(f, 0L, SEEK_END);
+	long idx_end = ftell(f);
+	fseek(f, 0L, SEEK_SET);
 
+	char* fsize = malloc(20*sizeof(char)); // 2^64 en base 10 fait au plus 20 digits de long
 
+	int l_fsize = sprintf(fsize, "%lu", idx_end); //moyen tordu de convertir un long en chaîne de charactères
+
+	h_writes(c_sock, fsize, l_fsize);
+
+	long bytes_sent = 0;
+	long sent = 0;
+
+	while(bytes_sent < idx_end){
+		fgets(buffer, SIZE, f);
+
+		sent = h_writes(c_sock, buffer, SIZE);
+
+		if (sent != SIZE && bytes_sent + sent != idx_end) {
+			for(int i = sent; i < SIZE; i++){
+				buffer[i - sent] = buffer[i];
+			}
+		}
+
+		bytes_sent += sent;
+
+		int left = SIZE - sent;
+
+		while (left){
+			sent = h_writes(c_sock, buffer, left);
+			bytes_sent += sent;
+			for(int i = sent ; i < left; i++)
+				buffer[i - sent] = buffer[i];
+			left -= sent;
+		}
+
+	}
+
+	free(buffer);
+	fclose(f);
 	return;
 }
 
@@ -223,7 +261,7 @@ void client_appli (char *serveur,char *service)
 				h_writes(c_sock, "3", 1);
 				fname = get_fname(buffer);
 				len_fname = strlen(fname);
-				send_file(c_sock, fname, len_name); 
+				send_file(c_sock, fname, len_fname); 
 				break;
 			case 4: // close
 				h_close(c_sock);

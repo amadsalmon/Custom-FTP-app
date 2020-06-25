@@ -11,6 +11,7 @@
 /******************************************************************************/	
 
 #include<stdio.h>
+#include<stdlib.h>
 #include <curses.h>
 
 #include<sys/signal.h>
