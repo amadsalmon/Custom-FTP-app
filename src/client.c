@@ -252,6 +252,8 @@ void client_appli (char *serveur,char *service)
 		switch (command){
 			case 1: // ls
 				h_writes(c_sock, "1", 1);
+				h_reads(c_sock, buffer, SIZE);
+				printf("%s\n", buffer);
 				break;
 			case 2: // get
 				h_writes(c_sock, "2", 1);

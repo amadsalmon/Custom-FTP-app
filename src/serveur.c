@@ -27,7 +27,7 @@
 #define SERVICE_DEFAUT "1111"
 #define SERVEUR_DEFAUT "127.0.0.1"
 
-#define PUBLIC_FOLDER_PATH "../public"
+#define PUBLIC_FOLDER_PATH "."
 
 
 #define SIZE 1480
@@ -103,7 +103,7 @@ void serveur_appli(char *service)
 void handle_request(int c_sock){
 	char *buffer = malloc(SIZE*sizeof(char));
 	h_reads(c_sock, buffer, 1);
-	int command = buffer[0];
+	int command = buffer[0] - '0';
 	switch(command){
 		case 1: //ls 
 			ls(c_sock);
@@ -239,8 +239,12 @@ void ls(int c_sock)
 		return;
 	}
 
-	while ((dir = readdir(d)) != NULL) 
-		h_writes(c_sock, dir->d_name, dir->d_namlen);
+	while ((dir = readdir(d)) != NULL){
+		if(dir->d_name[0] != '.'){
+			h_writes(c_sock, dir->d_name, dir->d_namlen);
+			printf("%s ;", dir->d_name);
+		}
+	} 
 	
 	closedir(d);
 	return;
