@@ -56,3 +56,7 @@ src/client
 src/serveur
 src/public*
 .vscode/c_cpp_properties.json
+public/surprise.png
+public/titi_1
+public/toto_1
+public/test_1
