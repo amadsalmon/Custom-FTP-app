@@ -131,11 +131,11 @@ void build_file(int c_sock){
 	int len_name = buffer[0];
 
 	h_reads(c_sock, buffer, len_name);
-	char* name_file = malloc(len_name * sizeof(char));
+	char* fname = malloc(len_name * sizeof(char));
 	for(int i = 0; i < len_name; i++)
-		name_file[i] = buffer[i+1];
+		fname[i] = buffer[i+1];
 
-	FILE* f = fopen(name_file, "w");
+	FILE* f = fopen(fname, "w");
 
 	if(f == NULL){
 		printf("PANIC! Couldn't create a new file");
@@ -164,6 +164,7 @@ void build_file(int c_sock){
 
 	fclose(f);
 	free(buffer);
+	free(fname);
 
 	return;
 }
@@ -228,10 +229,16 @@ void client_appli (char *serveur,char *service)
 /* procedure correspondant au traitement du client de votre application */
 
 {
-	struct sockaddr_in *clientAddress;
+	struct sockaddr_in *clientAddress, *serverAddress;
 	int c_sock = h_socket(AF_INET, SOCK_STREAM);
-	adr_socket(SERVICE_DEFAUT, SERVEUR_DEFAUT, AF_INET, &clientAddress);
+	adr_socket("2222", "127.0.0.1", SOCK_STREAM, &clientAddress);
+
+	adr_socket(SERVICE_DEFAUT, SERVEUR_DEFAUT, SOCK_STREAM, &serverAddress);
+
 	h_bind(c_sock, clientAddress);
+
+	h_connect(c_sock, serverAddress);
+
 
 	char* buffer; 
 	int command = -1;
