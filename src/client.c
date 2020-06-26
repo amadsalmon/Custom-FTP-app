@@ -133,14 +133,14 @@ void build_file(int c_sock){
 	h_reads(c_sock, buffer, 1);
 	int len_name = buffer[0];
 
-	printf("LEN NAME (l136) : %d", len_name);
-
 	h_reads(c_sock, buffer, len_name);
-	char* fname = malloc(len_name + 1 * sizeof(char));
+	char* fname = malloc(len_name + 3 * sizeof(char));
 	for(int i = 0; i < len_name; i++)
 		fname[i] = buffer[i];
 
-	fname[len_name] = '\0';
+	fname[len_name] = '_';
+	fname[len_name+1] = '1';
+	fname[len_name+2] = '\0';
 
 	printf("fname : %s", fname);
 	FILE* f = fopen(fname, "w");
@@ -152,8 +152,9 @@ void build_file(int c_sock){
 
 	// A verifier : Conversion de char* vers long
 	memset(buffer, 0, SIZE);
-	char * sfile = malloc(8*sizeof(char));
-	h_reads(c_sock, sfile, 8);
+	h_reads(c_sock, buffer, 1);
+	char * sfile = malloc(buffer[0]*sizeof(char));
+	h_reads(c_sock, sfile, buffer[0] - '0');
 	u_long len_file = atol(sfile);
 
 	printf("LEN_FILE = %lu\n", len_file);
@@ -171,6 +172,11 @@ void build_file(int c_sock){
 		read = h_reads(c_sock, buffer, to_read);
 		bytes_read += read;
 		
+		printf("DEBUG : read - %d\n", read);
+		for(int i = 0; i < read; i++){
+			printf("%c\n", buffer[i]);
+		}
+
 		fwrite(buffer, 1, read, f);
 		memset(buffer, 0, SIZE);
 	}

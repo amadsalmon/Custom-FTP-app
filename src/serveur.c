@@ -180,41 +180,29 @@ void send_file(int c_sock, char* fname, int len_name){
 	/* Permet de connaître la taille du fichier */
 	fseek(f, 0L, SEEK_END);
 	long idx_end = ftell(f);
-	printf("TAILLE DU FICHIER : %lu", idx_end);
+	printf("TAILLE DU FICHIER : %lu\n", idx_end);
 	fseek(f, 0L, SEEK_SET);
 
 	char* fsize = malloc(20*sizeof(char)); // 2^64 en base 10 fait au plus 20 digits de long
-
+	char* n_digits = malloc(sizeof(char));
 	int l_fsize = sprintf(fsize, "%lu", idx_end); //moyen tordu de convertir un long en chaîne de charactères
-
+	
+	printf("N_DIGITS : %d\n", l_fsize);
+	sprintf(n_digits, "%d", l_fsize);
+	h_writes(c_sock, n_digits ,1);
 	h_writes(c_sock, fsize, l_fsize);
 
 	long bytes_sent = 0;
 	long sent = 0;
+	long to_send = SIZE;
 
 	while(bytes_sent < idx_end){
-		fgets(buffer, SIZE, f);
+		if (idx_end - bytes_sent < SIZE)
+			to_send = idx_end - bytes_sent + 1;
 
-		sent = h_writes(c_sock, buffer, SIZE);
-
-		if (sent != SIZE && bytes_sent + sent != idx_end) {
-			for(int i = sent; i < SIZE; i++){
-				buffer[i - sent] = buffer[i];
-			}
-		}
-
+		fgets(buffer, to_send, f);
+		sent = h_writes(c_sock, buffer, to_send);
 		bytes_sent += sent;
-
-		int left = SIZE - sent;
-
-		while (left){
-			sent = h_writes(c_sock, buffer, left);
-			bytes_sent += sent;
-			for(int i = sent ; i < left; i++)
-				buffer[i - sent] = buffer[i];
-			left -= sent;
-		}
-
 	}
 
 	free(buffer);
