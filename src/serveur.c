@@ -89,21 +89,6 @@ void serveur_appli(char *service)
 	while(true){
 		handle_request(c_sock);
 	}
-
-	if (d == NULL)
-	{
-		printf("Could not open current directory." ); 
-		return 0;
-	}
-
-	while ((dir = readdir(d)) != NULL) {
-		printf("%s\n", dir->d_name);
-		// Besoin de mettre dir->d_name dans le buffer!
-		nb_octets_ecrits += h_writes(num_soc, buffer, nb_octets_buffer);
-	}
-	closedir(d);
-
-	return nb_octets_ecrits;
 }
 
 void handle_request(int c_sock){
