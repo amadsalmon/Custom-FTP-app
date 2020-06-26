@@ -91,25 +91,18 @@ void trim(char *s){
 
 
 int get_command(char* s){
-	int res = -1;
 
-	char* cmp = malloc(SIZE*sizeof(char));
-	for(int i =0; i < SIZE; i++){
-		cmp[i] = s[i];
-	}
-	trim(cmp);
-
-	if (strcmp("ls", cmp) == 0)
-		res = 1;
-	else if (strcmp("get", cmp) == 0)
-		res = 2;
-	else if (strcmp("put", cmp) == 0)
-		res = 3;
-	else if (strcmp("close", cmp) == 0)
-		res = 4;
+	if (strncmp("ls", s, 2) == 0)
+		return 1;
+	else if (strncmp("get", s, 3) == 0)
+		return 2;
+	else if (strncmp("put", s, 3) == 0)
+		return 3;
+	else if (strncmp("close", s, 4) == 0)
+		return 4;
 	
-	free(cmp);
-	return res;
+
+	return -1;
 }
 
 char* get_fname(char* s){
@@ -131,10 +124,6 @@ char* get_fname(char* s){
 		j++, i++;
 	}
 	res[j] = '\0';
-	printf("TEST GET_FNAME\n");
-	for(int i = 0; i < 10; i++){
-		printf("%c", s[i]);
-	}
 	return res;
 }
 
@@ -144,11 +133,16 @@ void build_file(int c_sock){
 	h_reads(c_sock, buffer, 1);
 	int len_name = buffer[0];
 
-	h_reads(c_sock, buffer, len_name);
-	char* fname = malloc(len_name * sizeof(char));
-	for(int i = 0; i < len_name; i++)
-		fname[i] = buffer[i+1];
+	printf("LEN NAME (l136) : %d", len_name);
 
+	h_reads(c_sock, buffer, len_name);
+	char* fname = malloc(len_name + 1 * sizeof(char));
+	for(int i = 0; i < len_name; i++)
+		fname[i] = buffer[i];
+
+	fname[len_name] = '\0';
+
+	printf("fname : %s", fname);
 	FILE* f = fopen(fname, "w");
 
 	if(f == NULL){
@@ -167,9 +161,14 @@ void build_file(int c_sock){
 	// Nombre de bytes lu en tout
 	u_long bytes_read = 0;
 	int read;
+	int to_read = SIZE;
+
 
 	while(bytes_read < len_file){
-		read = h_reads(c_sock, buffer, SIZE);
+		if(len_file - bytes_read < SIZE)
+			to_read = len_file - bytes_read;
+	
+		read = h_reads(c_sock, buffer, to_read);
 		bytes_read += read;
 		
 		fwrite(buffer, 1, read, f);
@@ -257,17 +256,19 @@ void client_appli (char *serveur,char *service)
 
 
 	while(flag){
+		printf("TOUR DE BOUCLE \n");
 		buffer = malloc(SIZE*sizeof(char));
 		fgets(buffer, SIZE, stdin);
 		command = get_command(buffer);
 		switch (command){
 			case 1: // ls
 				h_writes(c_sock, ls, 1);
-				h_reads(c_sock, buffer, SIZE);
+				h_reads(c_sock, buffer, 1);
+				h_reads(c_sock, buffer, buffer[0]);
 				printf("%s\n", buffer);
 				break;
 			case 2: // get
-				h_writes(c_sock, put, 1);
+				h_writes(c_sock, get, 1);
 				fname = get_fname(buffer);
 				len_fname = strlen(fname);
 				char sfname[1]; 
@@ -279,7 +280,7 @@ void client_appli (char *serveur,char *service)
 				break;
 			case 3: // put 
 				/* Même chose que lorsque le serveur recoit un get (ie: découper le fichier et l'envoyer morceau par morceau) */
-				h_writes(c_sock, get, 1);
+				h_writes(c_sock, put, 1);
 				fname = get_fname(buffer);
 				len_fname = strlen(fname);
 				send_file(c_sock, fname, len_fname); 

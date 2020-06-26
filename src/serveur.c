@@ -27,7 +27,7 @@
 #define SERVICE_DEFAUT "1111"
 #define SERVEUR_DEFAUT "127.0.0.1"
 
-#define PUBLIC_FOLDER_PATH "."
+#define PUBLIC_FOLDER_PATH "./public"
 
 
 #define SIZE 1480
@@ -165,16 +165,22 @@ void build_file(int c_sock){
 
 void send_file(int c_sock, char* fname, int len_name){
 	char* buffer = malloc(SIZE*sizeof(char));
+	
 	FILE* f = fopen(fname, "r");
 
 	if (f == NULL){
 		printf("PANIC! File not found or cannot be opened\n");
 		return;
 	}
+	char l_name[1];
+	l_name[0] = len_name;
 
+	h_writes(c_sock, l_name, 1);
+	h_writes(c_sock, fname, len_name);
 	/* Permet de connaître la taille du fichier */
 	fseek(f, 0L, SEEK_END);
 	long idx_end = ftell(f);
+	printf("TAILLE DU FICHIER : %lu", idx_end);
 	fseek(f, 0L, SEEK_SET);
 
 	char* fsize = malloc(20*sizeof(char)); // 2^64 en base 10 fait au plus 20 digits de long
@@ -224,6 +230,11 @@ void ls(int c_sock)
 	struct dirent *dir;  // Pointer for directory entry 
 	char space[1];
 	space[0] = ' ';
+
+	char* ls_string = malloc(255 * sizeof(char)); // limite de la taille 255 car 1 octet
+	int ls_len = 0;
+	char len[1];
+
 	DIR *d = opendir(PUBLIC_FOLDER_PATH);
 
 	if (d == NULL)
@@ -233,10 +244,15 @@ void ls(int c_sock)
 	}
 
 	while ((dir = readdir(d)) != NULL){
-		if(dir->d_name[0] != '.')
-			h_writes(c_sock, strcat(dir->d_name, space), dir->d_namlen + 1);
+		if(dir->d_name[0] != '.'){
+			strcat(ls_string, dir->d_name);
+			strcat(ls_string, " ");
+			ls_len += dir->d_namlen + 1;
+		}
 	} 
-	
+	len[0] = ls_len;
+	h_writes(c_sock, len, 1);
+	h_writes(c_sock, ls_string, ls_len);	
 	closedir(d);
 	return;
 }
