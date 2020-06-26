@@ -63,7 +63,6 @@ int main(int argc, char *argv[])
 		  service=argv[2];
 		  break;
     default:
-		  printf("Usage:client serveur(nom ou @IP)  service (nom ou port) \n");
 		  printf("Usage: client serveur(nom ou @IP)  service (nom ou port) \n");
 		  exit(1);
 	}
