@@ -24,6 +24,8 @@
 #define SERVICE_DEFAUT "1111"
 #define SERVEUR_DEFAUT "127.0.0.1"
 
+#define PUBLIC_FOLDER_PATH "../public/"
+
 #define SIZE 1480
 #define DELIMITORS "\n\r\t\f\v" /* Les delimiteurs usuelles */
 
@@ -134,6 +136,9 @@ void build_file(int c_sock){
 	int len_name = buffer[0];
 
 	h_reads(c_sock, buffer, len_name);
+
+	char* name = malloc((len_name + 3 + 10)* sizeof(char));
+	strcat(name, PUBLIC_FOLDER_PATH);
 	char* fname = malloc(len_name + 3 * sizeof(char));
 	for(int i = 0; i < len_name; i++)
 		fname[i] = buffer[i];
@@ -141,8 +146,9 @@ void build_file(int c_sock){
 	fname[len_name] = '_';
 	fname[len_name+1] = '1';
 	fname[len_name+2] = '\0';
+	strcat(name, fname);
 
-	FILE* f = fopen(fname, "w");
+	FILE* f = fopen(name, "w");
 
 	if(f == NULL){
 		printf("PANIC! Couldn't create a new file");
@@ -182,8 +188,10 @@ void build_file(int c_sock){
 
 void send_file(int c_sock, char* fname, int len_name){
 	char* buffer = malloc(SIZE*sizeof(char));
-	
-	FILE* f = fopen(fname, "r");
+	char* name = malloc((len_name + 10)* sizeof(char));
+	strcat(name, PUBLIC_FOLDER_PATH);
+	strcat(name, fname);
+	FILE* f = fopen(name, "r");
 
 	if (f == NULL){
 		printf("PANIC! File not found or cannot be opened\n");
