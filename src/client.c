@@ -130,6 +130,10 @@ char* get_fname(char* s){
 	return res;
 }
 
+/**
+ * Fonction appelée à la réponse du serveur après que le client ait émis une commande "get". 
+ * Permet de récupérer le fichier demandé que le serveur envoie octet par octet sur la socket.
+ * */
 void build_file(int c_sock){
 	char* buffer = malloc(SIZE*sizeof(char));
 
@@ -201,6 +205,10 @@ void build_file(int c_sock){
 	return;
 }
 
+/**
+ * Fonction appelée lorsque le client émettra une commande "put". 
+ * Permet d'envoyer le fichier souhaité octet par octet sur la socket.
+ * */
 void send_file(int c_sock, char* fname, int len_name){
 	char* buffer = malloc(SIZE*sizeof(char));
 	char* name = malloc((len_name + 10)* sizeof(char));
@@ -305,7 +313,7 @@ void client_appli (char *serveur,char *service)
 				flag = 0;
 				break;
 			default:
-				printf("PANIC! - Unkwonw command\n");
+				printf("PANIC! - Unknown command.\n");
 		}
 		free(buffer);
 	}
