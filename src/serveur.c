@@ -210,12 +210,12 @@ void send_file(int c_sock, char* fname, int len_name){
 	long sent = 0;
 	long to_send = SIZE;
 
-	while(bytes_sent < idx_end){
+	while(!feof(f) && bytes_sent < idx_end){
 		if (idx_end - bytes_sent < SIZE)
 			to_send = idx_end - bytes_sent + 1;
 
 		fgets(buffer, to_send, f);
-		sent = h_writes(c_sock, buffer, to_send);
+		sent = h_writes(c_sock, buffer, strlen(buffer));
 		bytes_sent += sent;
 	}
 
