@@ -158,11 +158,29 @@ void build_file(int c_sock){
 	char* name = malloc((trimmed_len + 3 + 10)* sizeof(char));
 	strcat(name, PUBLIC_FOLDER_PATH);
 	char* fname = malloc(trimmed_len + 3 * sizeof(char));
-	for(int i = 0; i < trimmed_len; i++)
-		fname[i] = trimmed_name[i];
-
-	fname[trimmed_len] = '_';
-	fname[trimmed_len+1] = '1';
+	int extension_flag = 0;
+	int k = 0;
+	for (int i = 0; i < trimmed_len; i++)
+	{
+		if (strcmp(trimmed_name[i],".") == 0 )
+		{
+			extension_flag = 1;
+			fname[k] = '_';
+			fname[k+1] = '1';
+			fname[k + 2] = trimmed_name[i];
+			k = k + 2;
+		}
+		else
+		{
+			fname[k] = trimmed_name[i];
+		}
+		k++;
+	}
+	if (extension_flag == 0)
+	{
+		fname[trimmed_len] = '_';
+		fname[trimmed_len+1] = '1';
+	}
 	fname[trimmed_len+2] = '\0';
 	strcat(name, fname);
 
