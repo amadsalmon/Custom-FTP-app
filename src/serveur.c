@@ -139,6 +139,8 @@ void handle_request(int c_sock){
 	
 /**
  * Fonction appelée par le serveur lorsque celui-ci recevra de la part du client une commande "put". 
+ * Réceptionne dans le buffer les octets du fichier envoyés par le client et crée avec un nouveau fichier.
+ * Le nom du fichier créé est le nom du fichier réceptionné auquel on rajoute le préfixe "../public" et le suffixe "_1".
  * */
 void build_file(int c_sock){
 	char* buffer = malloc(SIZE*sizeof(char));
@@ -154,6 +156,8 @@ void build_file(int c_sock){
 			break;
 	}
 
+	/* Prend le path du fichier et ne garde que le nom : "trimming". */
+	/* Début */
 	int trimmed_len = len_name - i;
 	int j = i;
 	char* trimmed_name = malloc(trimmed_len+1*sizeof(char));
@@ -161,7 +165,7 @@ void build_file(int c_sock){
 		trimmed_name[i - j] = buffer[i];
 	}
 
-
+	// Allocation de la longueur du nom original + 3 afin de pouvoir rajouter "_1\0" en fin de nom de fichier, et +10 pour ajouter le préfixe de chemin "../public/".
 	char* name = malloc((trimmed_len + 3 + 10)* sizeof(char));
 	strcat(name, PUBLIC_FOLDER_PATH);
 	char* fname = malloc(trimmed_len + 3 * sizeof(char));
@@ -172,6 +176,7 @@ void build_file(int c_sock){
 	fname[trimmed_len+1] = '1';
 	fname[trimmed_len+2] = '\0';
 	strcat(name, fname);
+	/* Fin */
 
 	FILE* f = fopen(fname, "w");
 
@@ -184,7 +189,16 @@ void build_file(int c_sock){
 	memset(buffer, 0, SIZE);
 	h_reads(c_sock, buffer, 1);
 	char * sfile = malloc(buffer[0]*sizeof(char));
-	h_reads(c_sock, sfile, buffer[0] - '0');
+	h_reads(c_sock, sfile, buffer[0] - '0'); 
+	/** Explication : 
+	 * Le buffer contient le caractère ('1', '2', '3', ou '4') correspondant à l'une des commandes ls, get, put, close. Ce chiffre est stocké dans le buffer sous forme d'un code ASCII (49, 50, 51, ou 52). 
+	 * On souhaite transformer le caractère contenu dans le buffer en valeur entière.
+	 * On soustrait '0' qui a 48 pour code ASCII afin que le résultat final soit bien compris entre 1 et 4.
+	 * 
+	 * Par exemple : si le buffer contient '2',
+	 * 					'2'-'0' = 50-48 = 2
+	 * 				On retrouve bien la valeur entière 2 à partir du code ASCII de '2'.
+	*/
 	u_long len_file = atol(sfile);
 	
 	// Nombre de bytes lu en tout
