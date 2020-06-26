@@ -126,31 +126,39 @@ void build_file(int c_sock){
 	int len_name = buffer[0];
 
 	h_reads(c_sock, buffer, len_name);
-	char* name_file = malloc(len_name * sizeof(char));
+	char* fname = malloc(len_name + 3 * sizeof(char));
 	for(int i = 0; i < len_name; i++)
-		name_file[i] = buffer[i+1];
+		fname[i] = buffer[i];
 
-	FILE* f = fopen(name_file, "w");
+	fname[len_name] = '_';
+	fname[len_name+1] = '1';
+	fname[len_name+2] = '\0';
+
+	FILE* f = fopen(fname, "w");
 
 	if(f == NULL){
 		printf("PANIC! Couldn't create a new file");
 		return;
 	}
 
-	// A verifier : Conversion de char* vers long
-	memset(buffer, 0, SIZE);
-	char * sfile = malloc(8*sizeof(char));
-	h_reads(c_sock, sfile, 8);
-	u_long len_file = atol(sfile);
 
-	printf("LEN_FILE = %lu\n", len_file);
+	memset(buffer, 0, SIZE);
+	h_reads(c_sock, buffer, 1);
+	char * sfile = malloc(buffer[0]*sizeof(char));
+	h_reads(c_sock, sfile, buffer[0] - '0');
+	u_long len_file = atol(sfile);
 	
 	// Nombre de bytes lu en tout
 	u_long bytes_read = 0;
 	int read;
+	int to_read = SIZE;
+
 
 	while(bytes_read < len_file){
-		read = h_reads(c_sock, buffer, SIZE);
+		if(len_file - bytes_read < SIZE)
+			to_read = len_file - bytes_read;
+	
+		read = h_reads(c_sock, buffer, to_read);
 		bytes_read += read;
 		
 		fwrite(buffer, 1, read, f);
@@ -159,6 +167,7 @@ void build_file(int c_sock){
 
 	fclose(f);
 	free(buffer);
+	free(fname);
 
 	return;
 }
@@ -180,14 +189,13 @@ void send_file(int c_sock, char* fname, int len_name){
 	/* Permet de connaître la taille du fichier */
 	fseek(f, 0L, SEEK_END);
 	long idx_end = ftell(f);
-	printf("TAILLE DU FICHIER : %lu\n", idx_end);
+
 	fseek(f, 0L, SEEK_SET);
 
 	char* fsize = malloc(20*sizeof(char)); // 2^64 en base 10 fait au plus 20 digits de long
 	char* n_digits = malloc(sizeof(char));
 	int l_fsize = sprintf(fsize, "%lu", idx_end); //moyen tordu de convertir un long en chaîne de charactères
 	
-	printf("N_DIGITS : %d\n", l_fsize);
 	sprintf(n_digits, "%d", l_fsize);
 	h_writes(c_sock, n_digits ,1);
 	h_writes(c_sock, fsize, l_fsize);

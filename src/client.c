@@ -142,7 +142,6 @@ void build_file(int c_sock){
 	fname[len_name+1] = '1';
 	fname[len_name+2] = '\0';
 
-	printf("fname : %s", fname);
 	FILE* f = fopen(fname, "w");
 
 	if(f == NULL){
@@ -157,8 +156,6 @@ void build_file(int c_sock){
 	h_reads(c_sock, sfile, buffer[0] - '0');
 	u_long len_file = atol(sfile);
 
-	printf("LEN_FILE = %lu\n", len_file);
-	
 	// Nombre de bytes lu en tout
 	u_long bytes_read = 0;
 	int read;
@@ -171,12 +168,7 @@ void build_file(int c_sock){
 	
 		read = h_reads(c_sock, buffer, to_read);
 		bytes_read += read;
-		
-		printf("DEBUG : read - %d\n", read);
-		for(int i = 0; i < read; i++){
-			printf("%c\n", buffer[i]);
-		}
-
+	
 		fwrite(buffer, 1, read, f);
 		memset(buffer, 0, SIZE);
 	}
@@ -190,50 +182,43 @@ void build_file(int c_sock){
 
 void send_file(int c_sock, char* fname, int len_name){
 	char* buffer = malloc(SIZE*sizeof(char));
+	
 	FILE* f = fopen(fname, "r");
 
 	if (f == NULL){
 		printf("PANIC! File not found or cannot be opened\n");
 		return;
 	}
+	char l_name[1];
+	l_name[0] = len_name;
 
+	h_writes(c_sock, l_name, 1);
+	h_writes(c_sock, fname, len_name);
 	/* Permet de connaître la taille du fichier */
 	fseek(f, 0L, SEEK_END);
 	long idx_end = ftell(f);
+
 	fseek(f, 0L, SEEK_SET);
 
 	char* fsize = malloc(20*sizeof(char)); // 2^64 en base 10 fait au plus 20 digits de long
-
+	char* n_digits = malloc(sizeof(char));
 	int l_fsize = sprintf(fsize, "%lu", idx_end); //moyen tordu de convertir un long en chaîne de charactères
-
+	
+	sprintf(n_digits, "%d", l_fsize);
+	h_writes(c_sock, n_digits ,1);
 	h_writes(c_sock, fsize, l_fsize);
 
 	long bytes_sent = 0;
 	long sent = 0;
+	long to_send = SIZE;
 
 	while(bytes_sent < idx_end){
-		fgets(buffer, SIZE, f);
+		if (idx_end - bytes_sent < SIZE)
+			to_send = idx_end - bytes_sent + 1;
 
-		sent = h_writes(c_sock, buffer, SIZE);
-
-		if (sent != SIZE && bytes_sent + sent != idx_end) {
-			for(int i = sent; i < SIZE; i++){
-				buffer[i - sent] = buffer[i];
-			}
-		}
-
+		fgets(buffer, to_send, f);
+		sent = h_writes(c_sock, buffer, to_send);
 		bytes_sent += sent;
-
-		int left = SIZE - sent;
-
-		while (left){
-			sent = h_writes(c_sock, buffer, left);
-			bytes_sent += sent;
-			for(int i = sent ; i < left; i++)
-				buffer[i - sent] = buffer[i];
-			left -= sent;
-		}
-
 	}
 
 	free(buffer);
@@ -262,7 +247,7 @@ void client_appli (char *serveur,char *service)
 
 
 	while(flag){
-		printf("TOUR DE BOUCLE \n");
+		printf("$> ");
 		buffer = malloc(SIZE*sizeof(char));
 		fgets(buffer, SIZE, stdin);
 		command = get_command(buffer);
