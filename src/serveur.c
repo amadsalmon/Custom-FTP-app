@@ -38,7 +38,8 @@
 void serveur_appli (char *service);   /* programme serveur */
 void handle_request(int c_sock);
 void build_file(int c_sock);
-void send_file(int c_sock, char* fname, int len_name)
+void send_file(int c_sock, char* fname, int len_name);
+void ls(int c_sock);
 
 /******************************************************************************/	
 /*---------------- programme serveur ------------------------------*/
@@ -227,7 +228,7 @@ void send_file(int c_sock, char* fname, int len_name){
 /**
  * Fonction appelée par le serveur lorsque celui-ci recevra de la part du client une commande "ls". Liste alors tous les fichiers contenus dans le répertoire courant.
  * */
-void ls(int num_soc)
+void ls(int c_sock)
 {
 	struct dirent *dir;  // Pointer for directory entry 
 	DIR *d = opendir(PUBLIC_FOLDER_PATH);
@@ -239,7 +240,7 @@ void ls(int num_soc)
 	}
 
 	while ((dir = readdir(d)) != NULL) 
-		h_writes(num_soc, dir->d_name, dir->d_namlen);
+		h_writes(c_sock, dir->d_name, dir->d_namlen);
 	
 	closedir(d);
 	return;
