@@ -223,8 +223,9 @@ void send_file(int c_sock, char* fname, int len_name){
 	/* Permet de connaître la taille du fichier */
 	fseek(f, 0L, SEEK_END);
 	long idx_end = ftell(f);
-
 	fseek(f, 0L, SEEK_SET);
+
+		printf("SIZE OF THE FILE : %lu\n", idx_end);
 
 	char* fsize = malloc(20*sizeof(char)); // 2^64 en base 10 fait au plus 20 digits de long
 	char* n_digits = malloc(sizeof(char));
