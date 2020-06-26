@@ -36,7 +36,7 @@ all: ${EXEC}
 
 
 fon.o :  $(INC_DIR)fon.h fon.c
-	gcc -g -DDEBUG $(CFLAGS) -c fon.c
+	gcc -g  $(CFLAGS) -c fon.c
 
 client.o : $(INC_DIR)fon.h client.c 
 	gcc -g  $(CFLAGS) -c  client.c	

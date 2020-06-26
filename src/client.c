@@ -32,6 +32,7 @@
 #define ls "1"
 #define get "2"
 #define put "3"
+#define close "4"
 
 void client_appli (char *serveur, char *service);
 
@@ -136,16 +137,30 @@ void build_file(int c_sock){
 	int len_name = buffer[0];
 
 	h_reads(c_sock, buffer, len_name);
+	
+	int i = len_name;
+	for(; i > 0; i--){
+		if(buffer[i-1] == '/')
+			break;
+	}
 
-	char* name = malloc((len_name + 3 + 10)* sizeof(char));
+	int trimmed_len = len_name - i;
+	int j = i;
+	char* trimmed_name = malloc(trimmed_len+1*sizeof(char));
+	for(; i <= len_name; i++){
+		trimmed_name[i - j] = buffer[i];
+	}
+
+
+	char* name = malloc((trimmed_len + 3 + 10)* sizeof(char));
 	strcat(name, PUBLIC_FOLDER_PATH);
-	char* fname = malloc(len_name + 3 * sizeof(char));
-	for(int i = 0; i < len_name; i++)
-		fname[i] = buffer[i];
-
-	fname[len_name] = '_';
-	fname[len_name+1] = '1';
-	fname[len_name+2] = '\0';
+	char* fname = malloc(trimmed_len + 3 * sizeof(char));
+	for(int i = 0; i < trimmed_len; i++)
+		fname[i] = trimmed_name[i];
+	
+	fname[trimmed_len] = '_';
+	fname[trimmed_len+1] = '1';
+	fname[trimmed_len+2] = '\0';
 	strcat(name, fname);
 
 	FILE* f = fopen(name, "w");
@@ -220,7 +235,7 @@ void send_file(int c_sock, char* fname, int len_name){
 	long sent = 0;
 	long to_send = SIZE;
 
-	while(!feof(f)){
+	while(!feof(f) && bytes_sent < idx_end){
 		if (idx_end - bytes_sent < SIZE)
 			to_send = idx_end - bytes_sent + 1;
 
@@ -285,6 +300,7 @@ void client_appli (char *serveur,char *service)
 				send_file(c_sock, fname, len_fname); 
 				break;
 			case 4: // close
+				h_writes(c_sock, close, 1);
 				h_close(c_sock);
 				flag = 0;
 				break;

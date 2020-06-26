@@ -78,45 +78,59 @@ void serveur_appli(char *service)
 {
 	struct sockaddr_in *serverAddress, *clientAddress = malloc(sizeof(struct sockaddr_in));
 	int s_sock = h_socket(AF_INET, SOCK_STREAM);
-	adr_socket(SERVICE_DEFAUT, SERVEUR_DEFAUT, SOCK_STREAM, &serverAddress);
+	adr_socket(SERVICE_DEFAUT, NULL, SOCK_STREAM, &serverAddress);
 	h_bind(s_sock, serverAddress);
 	h_listen(s_sock, 5);
 
 	int c_sock;
-	
-	c_sock = h_accept(s_sock, clientAddress);
-	
+
 	while(true){
-		handle_request(c_sock);
+		c_sock = h_accept(s_sock, clientAddress);
+		int pid = fork();
+		
+		if(pid == 0){
+			h_close(s_sock);
+			handle_request(c_sock);
+			exit(0);
+		}else{
+			h_close(c_sock);
+		}
 	}
 }
 
 void handle_request(int c_sock){
-	char *buffer = malloc(SIZE*sizeof(char));
-	h_reads(c_sock, buffer, 1);
-	int command = buffer[0] - '0';
-	switch(command){
-		case 1: //ls 
-			ls(c_sock);
-			break;
-		case 2: //get - here means send the file to the client
-			h_reads(c_sock, buffer, 1);
-			int len_name = buffer[0];
-			h_reads(c_sock, buffer, len_name);
-			char* fname = malloc(len_name*sizeof(char));
-			for(int i = 0; i < len_name; i++){
-				fname[i] = buffer[i];
-			}
-			send_file(c_sock, fname, len_name);
-			free(fname);
-			break; 
-		case 3://put - here means recieve a file
-			build_file(c_sock);
-			break;
-		default:
-			printf("PANIC! - What do you want ?\n");
+	char *buffer;
+	int flag = 1;
+	while(flag){
+		buffer = malloc(SIZE*sizeof(char));
+		h_reads(c_sock, buffer, 1);
+		int command = buffer[0] - '0';
+		switch(command){
+			case 1: //ls 
+				ls(c_sock);
+				break;
+			case 2: //get - here means send the file to the client
+				h_reads(c_sock, buffer, 1);
+				int len_name = buffer[0];
+				h_reads(c_sock, buffer, len_name);
+				char* fname = malloc(len_name*sizeof(char));
+				for(int i = 0; i < len_name; i++)
+					fname[i] = buffer[i];
+				send_file(c_sock, fname, len_name);
+				free(fname);
+				break; 
+			case 3://put - here means recieve a file
+				build_file(c_sock);
+				break;
+			case 4: // close
+				h_close(c_sock);
+				flag = 0;
+				break;
+			default:
+				printf("PANIC! - What do you want ?\n");
+		}
+		free(buffer);
 	}
-	free(buffer);
 }
 	
 void build_file(int c_sock){
@@ -127,15 +141,29 @@ void build_file(int c_sock){
 
 	h_reads(c_sock, buffer, len_name);
 
-	char* name = malloc((len_name + 3 + 10)* sizeof(char));
-	strcat(name, PUBLIC_FOLDER_PATH);
-	char* fname = malloc(len_name + 3 * sizeof(char));
-	for(int i = 0; i < len_name; i++)
-		fname[i] = buffer[i];
+	int i = len_name;
+	for(; i > 0; i--){
+		if(buffer[i-1] == '/')
+			break;
+	}
 
-	fname[len_name] = '_';
-	fname[len_name+1] = '1';
-	fname[len_name+2] = '\0';
+	int trimmed_len = len_name - i;
+	int j = i;
+	char* trimmed_name = malloc(trimmed_len+1*sizeof(char));
+	for(; i <= len_name; i++){
+		trimmed_name[i - j] = buffer[i];
+	}
+
+
+	char* name = malloc((trimmed_len + 3 + 10)* sizeof(char));
+	strcat(name, PUBLIC_FOLDER_PATH);
+	char* fname = malloc(trimmed_len + 3 * sizeof(char));
+	for(int i = 0; i < trimmed_len; i++)
+		fname[i] = trimmed_name[i];
+
+	fname[trimmed_len] = '_';
+	fname[trimmed_len+1] = '1';
+	fname[trimmed_len+2] = '\0';
 	strcat(name, fname);
 
 	FILE* f = fopen(fname, "w");
@@ -258,11 +286,3 @@ void ls(int c_sock)
 	closedir(d);
 	return;
 }
-
-/*
-Pour le serveur :
-
-Besoin d'utiliser les threads dans le main
-
-
-*/
