@@ -133,6 +133,7 @@ char* get_fname(char* s){
 /**
  * Fonction appelée à la réponse du serveur après que le client ait émis une commande "get". 
  * Permet de récupérer le fichier demandé que le serveur envoie octet par octet sur la socket.
+ * Le nom du fichier créé est le nom du fichier réceptionné auquel on rajoute le préfixe "../public" et le suffixe "_1".
  * */
 void build_file(int c_sock){
 	char* buffer = malloc(SIZE*sizeof(char));
@@ -148,6 +149,8 @@ void build_file(int c_sock){
 			break;
 	}
 
+	/* Prend le path du fichier et ne garde que le nom : "trimming". */
+	/* Début */
 	int trimmed_len = len_name - i;
 	int j = i;
 	char* trimmed_name = malloc(trimmed_len+1*sizeof(char));
@@ -155,7 +158,7 @@ void build_file(int c_sock){
 		trimmed_name[i - j] = buffer[i];
 	}
 
-
+	// Allocation de la longueur du nom original + 3 afin de pouvoir rajouter "_1\0" en fin de nom de fichier, et +10 pour ajouter le préfixe de chemin "../public/".
 	char* name = malloc((trimmed_len + 3 + 10)* sizeof(char));
 	strcat(name, PUBLIC_FOLDER_PATH);
 	char* fname = malloc(trimmed_len + 3 * sizeof(char));
@@ -166,6 +169,7 @@ void build_file(int c_sock){
 	fname[trimmed_len+1] = '1';
 	fname[trimmed_len+2] = '\0';
 	strcat(name, fname);
+	/* Fin */
 
 	FILE* f = fopen(name, "w");
 
