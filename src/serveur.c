@@ -253,7 +253,8 @@ void send_file(int c_sock, char* fname, int len_name){
 }
 
 /**
- * Fonction appelée par le serveur lorsque celui-ci recevra de la part du client une commande "ls". Liste alors tous les fichiers contenus dans le répertoire courant.
+ * Fonction appelée par le serveur lorsque celui-ci recevra de la part du client une commande "ls". 
+ * Liste alors tous les fichiers contenus dans le répertoire courant.
  * */
 void ls(int c_sock)
 {

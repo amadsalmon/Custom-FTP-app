@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
 		  break;
     default:
 		  printf("Usage:client serveur(nom ou @IP)  service (nom ou port) \n");
+		  printf("Usage: client serveur(nom ou @IP)  service (nom ou port) \n");
 		  exit(1);
 	}
 
@@ -130,6 +131,9 @@ char* get_fname(char* s){
 	return res;
 }
 
+/**
+ * Fonction qui récupère un fichier.
+*/
 void build_file(int c_sock){
 	char* buffer = malloc(SIZE*sizeof(char));
 
