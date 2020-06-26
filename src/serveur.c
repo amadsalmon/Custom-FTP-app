@@ -85,17 +85,11 @@ void serveur_appli(char *service)
 	h_listen(s_sock, 5);
 
 	int c_sock;
-
-
+	
+	c_sock = h_accept(s_sock, clientAddress);
 	
 	while(true){
-		c_sock = h_accept(s_sock, clientAddress);
-
-		if(c_sock != 0)
-			handle_request(c_sock);
-		else
-			continue;
-		c_sock = 0;
+		handle_request(c_sock);
 	}
 
 }
@@ -231,6 +225,8 @@ void send_file(int c_sock, char* fname, int len_name){
 void ls(int c_sock)
 {
 	struct dirent *dir;  // Pointer for directory entry 
+	char space[1];
+	space[0] = ' ';
 	DIR *d = opendir(PUBLIC_FOLDER_PATH);
 
 	if (d == NULL)
@@ -240,10 +236,8 @@ void ls(int c_sock)
 	}
 
 	while ((dir = readdir(d)) != NULL){
-		if(dir->d_name[0] != '.'){
-			h_writes(c_sock, dir->d_name, dir->d_namlen);
-			printf("%s ;", dir->d_name);
-		}
+		if(dir->d_name[0] != '.')
+			h_writes(c_sock, strcat(dir->d_name, space), dir->d_namlen + 1);
 	} 
 	
 	closedir(d);

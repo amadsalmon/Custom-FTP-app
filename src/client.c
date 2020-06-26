@@ -27,6 +27,10 @@
 #define SIZE 1480
 #define DELIMITORS "\n\r\t\f\v" /* Les delimiteurs usuelles */
 
+#define ls "1"
+#define get "2"
+#define put "3"
+
 void client_appli (char *serveur, char *service);
 
 
@@ -68,18 +72,18 @@ int main(int argc, char *argv[])
 }
 
 
-void trim(char **s){
+void trim(char *s){
 	int flag = 0;
 
-	strtok(*s, DELIMITORS);
+	strtok(s, DELIMITORS);
 	for(int i = 0; i < SIZE; i++){	
 		if(flag){
-			(*s)[i] = 0;
+			s[i] = 0;
 			continue;
 		}
 
-		if((*s)[i] == ' '){
-			(*s)[i] = '\0';
+		if(s[i] == ' '){
+			s[i] = '\0';
 			flag = 1;
 		}
 	}
@@ -87,23 +91,30 @@ void trim(char **s){
 
 
 int get_command(char* s){
-	trim(&s);
-	if (strcmp("ls", s) == 0)
-		return 1;
-	else if (strcmp("put", s) == 0)
-		return 2;
-	else if (strcmp("get", s) == 0)
-		return 3;
-	else if (strcmp("close", s) == 0){
-		return 4;
+	int res = -1;
+
+	char* cmp = malloc(SIZE*sizeof(char));
+	for(int i =0; i < SIZE; i++){
+		cmp[i] = s[i];
 	}
+	trim(cmp);
+
+	if (strcmp("ls", cmp) == 0)
+		res = 1;
+	else if (strcmp("get", cmp) == 0)
+		res = 2;
+	else if (strcmp("put", cmp) == 0)
+		res = 3;
+	else if (strcmp("close", cmp) == 0)
+		res = 4;
 	
-	return -1;
+	free(cmp);
+	return res;
 }
 
 char* get_fname(char* s){
-	int i = 0;
-	while(s[i] != ' ')
+	int i = 1;
+	while(s[i - 1] != ' ')
 		i++;
 	
 	/* Nous sommes maintenant devant le supposé nom de fichier */
@@ -120,7 +131,10 @@ char* get_fname(char* s){
 		j++, i++;
 	}
 	res[j] = '\0';
-
+	printf("TEST GET_FNAME\n");
+	for(int i = 0; i < 10; i++){
+		printf("%c", s[i]);
+	}
 	return res;
 }
 
@@ -229,34 +243,31 @@ void client_appli (char *serveur,char *service)
 /* procedure correspondant au traitement du client de votre application */
 
 {
-	struct sockaddr_in *clientAddress, *serverAddress;
+	struct sockaddr_in *serverAddress;
 	int c_sock = h_socket(AF_INET, SOCK_STREAM);
-	adr_socket("2222", "127.0.0.1", SOCK_STREAM, &clientAddress);
-
 	adr_socket(SERVICE_DEFAUT, SERVEUR_DEFAUT, SOCK_STREAM, &serverAddress);
-
-	h_bind(c_sock, clientAddress);
 
 	h_connect(c_sock, serverAddress);
 
 
 	char* buffer; 
-	int command = -1;
+	int command = -1, flag = 1;
 	char * fname;
 	int len_fname = 0;
 
-	while(1){
+
+	while(flag){
 		buffer = malloc(SIZE*sizeof(char));
 		fgets(buffer, SIZE, stdin);
 		command = get_command(buffer);
 		switch (command){
 			case 1: // ls
-				h_writes(c_sock, "1", 1);
+				h_writes(c_sock, ls, 1);
 				h_reads(c_sock, buffer, SIZE);
 				printf("%s\n", buffer);
 				break;
 			case 2: // get
-				h_writes(c_sock, "2", 1);
+				h_writes(c_sock, put, 1);
 				fname = get_fname(buffer);
 				len_fname = strlen(fname);
 				char sfname[1]; 
@@ -268,13 +279,14 @@ void client_appli (char *serveur,char *service)
 				break;
 			case 3: // put 
 				/* Même chose que lorsque le serveur recoit un get (ie: découper le fichier et l'envoyer morceau par morceau) */
-				h_writes(c_sock, "3", 1);
+				h_writes(c_sock, get, 1);
 				fname = get_fname(buffer);
 				len_fname = strlen(fname);
 				send_file(c_sock, fname, len_fname); 
 				break;
 			case 4: // close
 				h_close(c_sock);
+				flag = 0;
 				break;
 			default:
 				printf("PANIC! - Unkwonw command\n");
@@ -282,7 +294,7 @@ void client_appli (char *serveur,char *service)
 		free(buffer);
 	}
 
-	printf("Connection closed \n");
+	printf("Connection closed... Bye !\n");
 	return;
  }
 
