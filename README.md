@@ -35,9 +35,9 @@ La règle d'or ensuite est de préciser à chaque fois la longueur de la string 
 
 Prenons un exemple : $ > get toto
 Les différents segmetns contiendront donc :
-	- 2 pour get
-	- 4 pour la longueur de la chaine du nom du fichier à venir
-	- toto pour le nom du fichier
+- 2 pour get
+- 4 pour la longueur de la chaine du nom du fichier à venir
+- toto pour le nom du fichier
 
 On a donc un modèle de référence et on sait que chaque requête suivra cela.
 
@@ -48,15 +48,15 @@ __La transimission des fichiers :__
 Plusieurs points sont à traités ici, quel est le nom du fichier ? quelle est sa taille ?
 
 Voici une solution possible (probablement pas optimale mais qui a le mérite de fonctionner) :
-	- 1 - À ce stade là, on a déjà le nom du fichier ainsi que la taille de cette fameuse string.
-	- 2 - On ouvre le fichier, on se place à la fin (grâce à fseek) pour connaître l'indice du dernier élément et donc la taille du fichier.
-	- 3 - On envoie donc la taille du nom du fichier n sur 1 octet, la string sur n octets.
-	- 4 - On transmet la taille du fichier au client pour qu'il puisse savoir combien d'octets il doit attendre. Pour cela on donne sur un octet le nombre de digit que contient la taille du fichier (20 digits maximum pour 2^64 octets). Puis on converti la taille, long de base, en char* qu'on pourra envoyer grâce à h_writes.
-	- 5 - On compte les octets envoyés et on boucle tant que l'on a pas atteint la taille du fichier
+1. À ce stade là, on a déjà le nom du fichier ainsi que la taille de cette fameuse string.
+2. On ouvre le fichier, on se place à la fin (grâce à fseek) pour connaître l'indice du dernier élément et donc la taille du fichier.
+3. On envoie donc la taille du nom du fichier n sur 1 octet, la string sur n octets.
+4. On transmet la taille du fichier au client pour qu'il puisse savoir combien d'octets il doit attendre. Pour cela on donne sur un octet le nombre de digit que contient la taille du fichier (20 digits maximum pour 2^64 octets). Puis on converti la taille, long de base, en char* qu'on pourra envoyer grâce à h_writes.
+5. On compte les octets envoyés et on boucle tant que l'on a pas atteint la taille du fichier
 
 Du côté du client pour un get ou du serveur pour un put :
-	- 1 - On a tous les ingrédients pour reconstruire le fichier (nom, longeur de la string nom, taille du fichier et des données)
-	- 2 - On lit jusqu'à arriver à la bonne taille du fichier
+1. On a tous les ingrédients pour reconstruire le fichier (nom, longeur de la string nom, taille du fichier et des données)
+2. On lit jusqu'à arriver à la bonne taille du fichier
 
 __Version concurrente :__
 
@@ -71,10 +71,10 @@ __Démonstration :__
 L'objectif était de pouvoir notre application réellement et ne pas se bloquer à du localhost. Nous avons donc configuré notre box afin de pouvoir faire fonctionner le tout et s'échanger des fichiers de Nice à Grenoble.
 
 Dans l'odre voici les manipulations effectués : 
-	- 1 - Attribution d'un adresse IP statique.
-	- 2 - Redirection de port vers la machine (si une connection se fait sur le routeur, sur le port 5555 dans notre cas, il la redirige sur la machine sur le port 1111).
-	- 3 - Nous avons desactivé le pare-feu temporairement au lieu de d'ouvrir les ports
-	- 4 - Et c'est tout !
+1. Attribution d'un adresse IP statique.
+2. Redirection de port vers la machine (si une connection se fait sur le routeur, sur le port 5555 dans notre cas, il la redirige sur la machine sur le port 1111).
+3. Nous avons desactivé le pare-feu temporairement au lieu de d'ouvrir les ports
+4. Et c'est tout !
 
 
 
