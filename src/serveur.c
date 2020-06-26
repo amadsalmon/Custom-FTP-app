@@ -150,6 +150,7 @@ void build_file(int c_sock){
 
 	h_reads(c_sock, buffer, len_name);
 
+
 	int i = len_name;
 	for(; i > 0; i--){
 		if(buffer[i-1] == '/')
