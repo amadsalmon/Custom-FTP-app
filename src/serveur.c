@@ -77,10 +77,45 @@ void serveur_appli(char *service)
 {
 	char* buffer = malloc(SIZE*sizeof(char));
 
-	struct sockaddr_in *serverAddress;
+	struct sockaddr_in *server_socket_address;
 	int s_sock = h_socket(AF_INET, SOCK_STREAM);
-	adr_socket(SERVICE_DEFAUT, SERVEUR_DEFAUT, AF_INET, &serverAddress);
-	h_bind(s_sock, serverAddress);
+	adr_socket(SERVICE_DEFAUT, SERVEUR_DEFAUT, AF_INET, &server_socket_address);
+	h_bind(s_sock, server_socket_address);
+
+	while(1){
+		buffer = malloc(SIZE*sizeof(char));
+		fgets(buffer, SIZE, stdin);
+		command = get_command(buffer);
+		switch (command){
+			case 1: // ls
+				h_writes(c_sock, "1", 1);
+				break;
+			case 2: // get
+				h_writes(c_sock, "2", 1);
+				fname = get_fname(buffer);
+				len_fname = strlen(fname);
+				char sfname[1]; 
+				sfname[0] = (char)len_fname; 
+				/* Permet d'envoyer un entier precisant la longueur de la chaine, utile pour le décodage */
+				h_writes (c_sock, sfname, 1);
+				h_writes (c_sock, fname, len_fname);
+				build_file(c_sock);
+				break;
+			case 3: // put 
+				/* Même chose que lorsque le serveur recoit un get (ie: découper le fichier et l'envoyer morceau par morceau) */
+				h_writes(c_sock, "3", 1);
+				fname = get_fname(buffer);
+				len_fname = strlen(fname);
+				send_file(c_sock, fname, len_fname); 
+				break;
+			case 4: // close
+				h_close(c_sock);
+				break;
+			default:
+				printf("PANIC! - Unkwonw command\n");
+		}
+		free(buffer);
+	}
 
 }
 	
