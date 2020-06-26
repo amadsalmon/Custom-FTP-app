@@ -18,23 +18,26 @@
 #include<sys/wait.h>
 #include<stdlib.h>
 #include <sys/socket.h>
+#include <string.h>
 
 #include "fon.h"     		/* Primitives de la boite a outils */
 
 #include <dirent.h>
 
 #define SERVICE_DEFAUT "1111"
+#define SERVEUR_DEFAUT "127.0.0.1"
 
-#define PUBLIC_FOLDER_PATH "../public"
+#define PUBLIC_FOLDER_PATH "."
 
 
 #define SIZE 1480
 #define DELIMITORS "\n\r\t\f\v" /* Les delimiteurs usuelles */
 
-
-
 void serveur_appli (char *service);   /* programme serveur */
-
+void handle_request(int c_sock);
+void build_file(int c_sock);
+void send_file(int c_sock, char* fname, int len_name);
+void ls(int c_sock);
 
 /******************************************************************************/	
 /*---------------- programme serveur ------------------------------*/
@@ -73,44 +76,62 @@ void serveur_appli(char *service)
 /* Procedure correspondant au traitemnt du serveur de votre application */
 
 {
-	char buffer[SIZE];
+	struct sockaddr_in *serverAddress, *clientAddress = malloc(sizeof(struct sockaddr_in));
+	int s_sock = h_socket(AF_INET, SOCK_STREAM);
+	adr_socket(SERVICE_DEFAUT, SERVEUR_DEFAUT, SOCK_STREAM, &serverAddress);
+	h_bind(s_sock, serverAddress);
+	h_listen(s_sock, 5);
 
-	int socket = h_socket();
-	struct sockaddr_in *p_address_socket = malloc(sizeof(sockaddr_in));
-	adr_socket(service, IP_DEFAUT, typesock, p_address_socket); // Initialisation de la socket
-
-	int bind = h_bind(socket, p_address_socket);
-
-	int nb_req_att = 1; // Nombre de requêtes à écouter
-	h_listen(socket, nb_req_att);
-	for (int i = 0; i < nb_req_att; i++)
-	{
-		h_accept(socket, /* on doit mettre ici le struct sockaddr_in* du client mais comment l'obtenir ??? */);
-		h_reads(socket, buffer, taille_buffer);
-		
-		// Lire ici dans le buffer.
-		// Parser la commande lue.
-		int parsed_command = parse_buffer(buffer, BUFFER_SIZE);
-
-		// Réagir en fonction de la commande lue.
-		switch (parsed_command)
-		{
-		case PARSED_GET:
-			/* code */
-			break;
-		case PARSED_PUT:
-			/* code */
-			break;
-		case PARSED_LS:
-			/* code */
-			break;
-		
-		default:
-			h_writes(socket, "Erreur : commande non valide.", strlen("Erreur : commande non valide."));
-			h_close(socket);
-			break;
-		}
+	int c_sock;
+	
+	c_sock = h_accept(s_sock, clientAddress);
+	
+	while(true){
+		handle_request(c_sock);
 	}
+
+	if (d == NULL)
+	{
+		printf("Could not open current directory." ); 
+		return 0;
+	}
+
+	while ((dir = readdir(d)) != NULL) {
+		printf("%s\n", dir->d_name);
+		// Besoin de mettre dir->d_name dans le buffer!
+		nb_octets_ecrits += h_writes(num_soc, buffer, nb_octets_buffer);
+	}
+	closedir(d);
+
+	return nb_octets_ecrits;
+}
+
+void handle_request(int c_sock){
+	char *buffer = malloc(SIZE*sizeof(char));
+	h_reads(c_sock, buffer, 1);
+	int command = buffer[0] - '0';
+	switch(command){
+		case 1: //ls 
+			ls(c_sock);
+			break;
+		case 2: //get - here means send the file to the client
+			h_reads(c_sock, buffer, 1);
+			int len_name = buffer[0];
+			h_reads(c_sock, buffer, len_name);
+			char* fname = malloc(len_name*sizeof(char));
+			for(int i = 0; i < len_name; i++){
+				fname[i] = buffer[i];
+			}
+			send_file(c_sock, fname, len_name);
+			free(fname);
+			break; 
+		case 3://put - here means recieve a file
+			build_file(c_sock);
+			break;
+		default:
+			printf("PANIC! - What do you want ?\n");
+	}
+	free(buffer);
 }
 	
 void build_file(int c_sock){
@@ -157,33 +178,83 @@ void build_file(int c_sock){
 	return;
 }
 
+void send_file(int c_sock, char* fname, int len_name){
+	char* buffer = malloc(SIZE*sizeof(char));
+	FILE* f = fopen(fname, "r");
+
+	if (f == NULL){
+		printf("PANIC! File not found or cannot be opened\n");
+		return;
+	}
+
+	/* Permet de connaître la taille du fichier */
+	fseek(f, 0L, SEEK_END);
+	long idx_end = ftell(f);
+	fseek(f, 0L, SEEK_SET);
+
+	char* fsize = malloc(20*sizeof(char)); // 2^64 en base 10 fait au plus 20 digits de long
+
+	int l_fsize = sprintf(fsize, "%lu", idx_end); //moyen tordu de convertir un long en chaîne de charactères
+
+	h_writes(c_sock, fsize, l_fsize);
+
+	long bytes_sent = 0;
+	long sent = 0;
+
+	while(bytes_sent < idx_end){
+		fgets(buffer, SIZE, f);
+
+		sent = h_writes(c_sock, buffer, SIZE);
+
+		if (sent != SIZE && bytes_sent + sent != idx_end) {
+			for(int i = sent; i < SIZE; i++){
+				buffer[i - sent] = buffer[i];
+			}
+		}
+
+		bytes_sent += sent;
+
+		int left = SIZE - sent;
+
+		while (left){
+			sent = h_writes(c_sock, buffer, left);
+			bytes_sent += sent;
+			for(int i = sent ; i < left; i++)
+				buffer[i - sent] = buffer[i];
+			left -= sent;
+		}
+
+	}
+
+	free(buffer);
+	fclose(f);
+	return;
+}
 
 /**
  * Fonction appelée par le serveur lorsque celui-ci recevra de la part du client une commande "ls". Liste alors tous les fichiers contenus dans le répertoire courant.
  * */
-int ls_dir(int num_soc, char *buffer, int nb_octets_buffer)
+void ls(int c_sock)
 {
-	int nb_octets_ecrits = 0;
-
 	struct dirent *dir;  // Pointer for directory entry 
+	char space[1];
+	space[0] = ' ';
 	DIR *d = opendir(PUBLIC_FOLDER_PATH);
 
 	if (d == NULL)
 	{
 		printf("Could not open current directory." ); 
-		return 0;
+		return;
 	}
 
-	while ((dir = readdir(d)) != NULL) {
-		printf("%s\n", dir->d_name);
-		// Besoin de mettre dir->d_name dans le buffer!
-		nb_octets_ecrits += h_writes(num_soc, buffer, nb_octets_buffer);
-	}
+	while ((dir = readdir(d)) != NULL){
+		if(dir->d_name[0] != '.')
+			h_writes(c_sock, strcat(dir->d_name, space), dir->d_namlen + 1);
+	} 
+	
 	closedir(d);
-
-	return nb_octets_ecrits;
+	return;
 }
-
 
 /*
 Pour le serveur :
