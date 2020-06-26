@@ -54,4 +54,5 @@ serveur : ${OBJ2}
 
 clean : 
 	rm -f ${EXEC} core
+	rm -rf ../public/*_1
 

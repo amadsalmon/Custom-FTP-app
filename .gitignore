@@ -54,5 +54,5 @@ dkms.conf
 # Custom
 src/client
 src/serveur
-src/public*
+src/public/*_1
 .vscode/c_cpp_properties.json
