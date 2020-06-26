@@ -73,7 +73,7 @@ int main(int argc,char *argv[])
 /******************************************************************************/	
 void serveur_appli(char *service)
 
-/* Procedure correspondant au traitemnt du serveur de votre application */
+/* Procedure correspondant au traitement du serveur de votre application */
 
 {
 	struct sockaddr_in *serverAddress, *clientAddress = malloc(sizeof(struct sockaddr_in));
@@ -98,6 +98,10 @@ void serveur_appli(char *service)
 	}
 }
 
+/**
+ * Traite la requête émise par le client se trouvant dans le buffer. 
+ * Détermine la commande émise (ls, get, put, ou close) et effectue le traitement nécessaire.
+*/
 void handle_request(int c_sock){
 	char *buffer;
 	int flag = 1;
@@ -133,6 +137,9 @@ void handle_request(int c_sock){
 	}
 }
 	
+/**
+ * Fonction appelée par le serveur lorsque celui-ci recevra de la part du client une commande "put". 
+ * */
 void build_file(int c_sock){
 	char* buffer = malloc(SIZE*sizeof(char));
 
@@ -204,6 +211,10 @@ void build_file(int c_sock){
 	return;
 }
 
+/**
+ * Fonction appelée par le serveur lorsque celui-ci recevra de la part du client une commande "get". 
+ * Trouve le fichier demandé et l'envoie sur la socket.
+ * */
 void send_file(int c_sock, char* fname, int len_name){
 	char* buffer = malloc(SIZE*sizeof(char));
 	char* name = malloc((len_name + 10)* sizeof(char));
