@@ -76,5 +76,4 @@ Dans l'odre voici les manipulations effectués :
 3. Nous avons desactivé le pare-feu temporairement au lieu de d'ouvrir les ports
 4. Et c'est tout !
 
-
-
+[Lien vers la vidéo de démonstration](https://youtu.be/TmTezctlEXI)
